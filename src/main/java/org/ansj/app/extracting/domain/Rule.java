@@ -13,7 +13,7 @@ public class Rule {
 	private double weight;
 	private String ruleStr ;
 
-
+    /*
 	public Rule(String ruleStr ,List<Token> tokens, Map<String, int[]> groups, Map<String, String> attr, double weight) {
 		this.ruleStr = ruleStr ;
 		this.tokens = tokens;
@@ -21,6 +21,15 @@ public class Rule {
 		this.attr = attr ;
 		this.weight = weight;
 	}
+     */
+	private Rule(Builder builder) {
+		this.tokens = builder.tokens;
+		this.groups = builder.groups;
+		this.attr = builder.attr;
+		this.weight = builder.weight;
+		this.ruleStr = builder.ruleStr;
+	}
+
 
 	public void setTokens(List<Token> tokens) {
 		this.tokens = tokens;
@@ -53,4 +62,42 @@ public class Rule {
 	public String getRuleStr() {
 		return ruleStr;
 	}
+
+	public static class Builder {
+		private List<Token> tokens;
+		private Map<String, int[]> groups;
+		private Map<String, String> attr;
+		private double weight;
+		private String ruleStr;
+
+		public Builder setTokens(List<Token> tokens) {
+			this.tokens = tokens;
+			return this;
+		}
+
+		public Builder setGroups(Map<String, int[]> groups) {
+			this.groups = groups;
+			return this;
+		}
+
+		public Builder setAttr(Map<String, String> attr) {
+			this.attr = attr;
+			return this;
+		}
+
+		public Builder setWeight(double weight) {
+			this.weight = weight;
+			return this;
+		}
+
+		public Builder setRuleStr(String ruleStr) {
+			this.ruleStr = ruleStr;
+			return this;
+		}
+
+		public Rule build() {
+			return new Rule(this);
+		}
+	}
+
 }

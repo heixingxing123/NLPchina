@@ -11,6 +11,7 @@ import java.util.Map;
 
 public class RuleTest {
 
+    /*
     @Test
     public void test() {
         String ruleStr = "a";
@@ -19,6 +20,30 @@ public class RuleTest {
         Map<String, String> attr = null;
         double weight = 1.0;
         Rule rule = new Rule(ruleStr, tokens, groups, attr, weight);
+        rule.setTokens(null);
+        rule.setGroups(null);
+        rule.setWeight(2.0);
+        Assert.assertNull(rule.getTokens());
+        Assert.assertNull(rule.getGroups());
+        Assert.assertTrue(rule.getWeight() == 2.0);
+        Assert.assertSame(rule.getRuleStr(), "a");
+    }
+     */
+
+    @Test
+    public void test() {
+        String ruleStr = "a";
+        List<Token> tokens = null;
+        Map<String, int[]> groups = null;
+        Map<String, String> attr = null;
+        double weight = 1.0;
+        Rule rule = new Rule.Builder()
+                .setRuleStr(ruleStr)
+                .setTokens(tokens)
+                .setGroups(groups)
+                .setAttr(attr)
+                .setWeight(weight)
+                .build();
         rule.setTokens(null);
         rule.setGroups(null);
         rule.setWeight(2.0);

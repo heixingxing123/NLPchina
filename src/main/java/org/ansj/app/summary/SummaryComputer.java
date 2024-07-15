@@ -112,6 +112,7 @@ public class SummaryComputer {
 	 * @param content
 	 * @return
 	 */
+	/*
 	private Summary explan(List<Keyword> keywords, String content) {
 
 		SmartForest<Double> sf = new SmartForest<Double>();
@@ -197,7 +198,7 @@ public class SummaryComputer {
 		/**
 		 * 是否强制文本长度。对于abc这种字符算半个长度
 		 */
-
+        /*
 		if (isSplitSummary && sb.length() > len) {
 
 			String str = sb.toString();
@@ -247,6 +248,158 @@ public class SummaryComputer {
 
 		return new Summary(keywords, summaryStr);
 
+	}
+         */
+
+	private Summary explan(List<Keyword> keywords, String content) {
+		SmartForest<Double> sf = buildKeywordForest(keywords);
+		List<Sentence> sentences = toSentenceList(content.toCharArray());
+
+		boolean hasScoredSentence = computeScoresForSentences(sentences, sf);
+
+		if (!hasScoredSentence) {
+			return createSummary(keywords, content);
+		}
+
+		int maxIndex = findBestSentenceIndex(sentences);
+		String summaryStr = buildSummaryString(sentences, maxIndex);
+
+		if (isSplitSummary && summaryStr.length() > len) {
+			summaryStr = splitSummaryString(summaryStr, sf);
+		}
+
+		return new Summary(keywords, summaryStr);
+	}
+
+	private SmartForest<Double> buildKeywordForest(List<Keyword> keywords) {
+		SmartForest<Double> sf = new SmartForest<>();
+		for (Keyword keyword : keywords) {
+			sf.add(keyword.getName(), keyword.getScore());
+		}
+		return sf;
+	}
+
+	private boolean computeScoresForSentences(List<Sentence> sentences, SmartForest<Double> sf) {
+		boolean flag = false;
+		for (Sentence sentence : sentences) {
+			flag = computeScore(sentence, sf, false) || flag;
+		}
+		return flag;
+	}
+
+	private Summary createSummary(List<Keyword> keywords, String content) {
+		if (content.length() <= len) {
+			return new Summary(keywords, content);
+		}
+		return new Summary(keywords, content.substring(0, len));
+	}
+
+	private int findBestSentenceIndex(List<Sentence> sentences) {
+		double maxScore = 0;
+		int maxIndex = 0;
+		MapCount<String> mc = new MapCount<>();
+
+		for (int i = 0; i < sentences.size(); i++) {
+			double tempScore = sentences.get(i).score;
+			int tempLength = sentences.get(i).value.length();
+			mc.addAll(sentences.get(i).mc.get());
+
+			if (tempLength >= len) {
+				tempScore = tempScore * mc.get().size();
+				if (maxScore <= tempScore) {
+					maxScore = tempScore;
+					maxIndex = i;
+				} else {
+					mc.get().clear();
+				}
+				continue;
+			}
+			for (int j = i + 1; j < sentences.size(); j++) {
+				tempScore += sentences.get(j).score;
+				tempLength += sentences.get(j).value.length();
+				mc.addAll(sentences.get(j).mc.get());
+
+				if (tempLength >= len) {
+					tempScore = tempScore * mc.get().size();
+					if (maxScore <= tempScore) {
+						maxScore = tempScore;
+						maxIndex = i;
+					}
+					mc.get().clear();
+					break;
+				}
+			}
+
+			if (tempLength < len) {
+				tempScore = tempScore * mc.get().size();
+				if (maxScore <= tempScore) {
+					maxScore = tempScore;
+					maxIndex = i;
+					break;
+				}
+				mc.get().clear();
+			}
+		}
+		return maxIndex;
+	}
+
+	private String buildSummaryString(List<Sentence> sentences, int maxIndex) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = maxIndex; i < sentences.size(); i++) {
+			sb.append(sentences.get(i).value);
+			if (sb.length() > len) {
+				break;
+			}
+		}
+		return sb.toString();
+	}
+
+	private String splitSummaryString(String summaryStr, SmartForest<Double> sf) {
+		Sentence sentence = new Sentence(summaryStr);
+		computeScore(sentence, sf, true);
+		List<Triplet<Integer, Integer, Double>> offset = sentence.offset;
+
+		List<Integer> beginArr = findSplitPoints(summaryStr, offset);
+
+		int maxIndex = findMaxScoreIndex(summaryStr, offset, beginArr);
+		return summaryStr.substring(maxIndex, Math.min(maxIndex + len + 1, summaryStr.length()));
+	}
+
+	private List<Integer> findSplitPoints(String str, List<Triplet<Integer, Integer, Double>> offset) {
+		List<Integer> beginArr = new ArrayList<>();
+		f: for (int i = 0; i < str.length(); i++) {
+			for (Triplet<Integer, Integer, Double> t : offset) {
+				if (i > t.getValue0() && i < t.getValue1()) {
+					continue f;
+				}
+			}
+
+			if (str.length() - i < len) {
+				break;
+			}
+
+			beginArr.add(i);
+		}
+		return beginArr;
+	}
+
+	private int findMaxScoreIndex(String str, List<Triplet<Integer, Integer, Double>> offset, List<Integer> beginArr) {
+		int maxIndex = 0;
+		double maxScore = -10000;
+
+		for (Integer begin : beginArr) {
+			double score = 0;
+			for (Triplet<Integer, Integer, Double> t : offset) {
+				if (begin < t.getValue0() && begin + len > t.getValue1()) {
+					score += t.getValue2();
+				}
+			}
+			if (score > maxScore) {
+				maxIndex = begin;
+				maxScore = score;
+			}
+		}
+		return maxIndex;
 	}
 
 	/**

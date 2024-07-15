@@ -23,7 +23,7 @@ public class Lexical {
 		MAP.put('{', '}');
 	}
 
-
+     /*
 	public static Rule parse(String line) throws RuleFormatException {
 
 		if (StringUtil.isBlank(line)) {
@@ -101,6 +101,92 @@ public class Lexical {
 		}
 
 		return new Rule(line, tokens, groups, attr, weight);
+	}
+      */
+
+	public static Rule parse(String line) throws RuleFormatException {
+		if (StringUtil.isBlank(line)) {
+			return null;
+		}
+
+		String[] split = line.split("\t");
+		String rule = split[0];
+
+		List<Token> tokens = parseTokens(rule);
+		Map<String, int[]> groups = new HashMap<>();
+		Map<String, String> attr = new HashMap<>();
+		double weight = 1d;
+
+		if (split.length > 1 && StringUtil.isNotBlank(split[1])) {
+			parseAttributesAndGroups(split[1], attr, groups);
+		}
+
+		if (split.length > 2 && StringUtil.isNotBlank(split[2])) {
+			weight = Double.parseDouble(split[2]);
+		}
+
+		return new Rule.Builder()
+				.setRuleStr(line)
+				.setTokens(tokens)
+				.setGroups(groups)
+				.setAttr(attr)
+				.setWeight(weight)
+				.build();
+	}
+
+	private static List<Token> parseTokens(String rule) throws RuleFormatException {
+		List<String> list = new ArrayList<>();
+		List<Token> tokens = new ArrayList<>();
+
+		for (int i = 0; i < rule.length(); i++) {
+			switch (rule.charAt(i)) {
+				case ' ':
+					break;
+				case '(':
+				case '{':
+				case '[':
+					i = makeToken(list, rule, i);
+					break;
+				default:
+					throw new RuleFormatException(rule + " not begin ( at index " + i);
+			}
+		}
+
+		Token token = null;
+		int index = 0;
+
+		for (String str : list) {
+			if (str.startsWith("(")) {
+				Token tempToken = new Token(index, str);
+				index++;
+				tokens.add(tempToken);
+				if (token != null) {
+					token.setNext(tempToken);
+				}
+				token = tempToken;
+			} else {
+				token.addAttr(str);
+			}
+		}
+
+		return tokens;
+	}
+
+	private static void parseAttributesAndGroups(String attrAndGroups, Map<String, String> attr, Map<String, int[]> groups) {
+		String[] split1 = attrAndGroups.split(";");
+		for (String s1 : split1) {
+			String[] split2 = s1.split(":");
+			if (split2[1].startsWith("(")) {
+				attr.put(split2[0], split2[1].substring(1, split2[1].length() - 1));
+			} else {
+				String[] split3 = split2[1].split(",");
+				int[] ints = new int[split3.length];
+				for (int j = 0; j < ints.length; j++) {
+					ints[j] = Integer.parseInt(split3[j].trim());
+				}
+				groups.put(split2[0], ints);
+			}
+		}
 	}
 
 	private static int makeToken(List<String> list, String rule, int i) {

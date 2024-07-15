@@ -80,7 +80,8 @@ public class SplitWord {
 		 * 填充图
 		 */
 		for (int i = 0; i < length; i++) {
-			computeTagScore(elements, i);
+			//computeTagScore(elements, i);
+			model.computeTagScore(elements, i);
 		}
 
 		// 如果是开始不可能从 m，e开始 ，所以将它设为一个很小的值
@@ -118,7 +119,7 @@ public class SplitWord {
 		return elements;
 
 	}
-
+    /*
 	private void computeTagScore(List<Element> elements, int index) {
 
 		char[][] feautres = model.getConfig().makeFeatureArr(elements, index);
@@ -132,7 +133,7 @@ public class SplitWord {
 
 		elements.get(index).tagScore = tagScore;
 	}
-
+    */
 	/**
 	 * 随便给一个词。计算这个词的内聚分值，可以理解为计算这个词的可信度
 	 * 
@@ -147,7 +148,8 @@ public class SplitWord {
 		List<Element> elements = Config.wordAlert(word);
 
 		for (int i = 0; i < elements.size(); i++) {
-			computeTagScore(elements, i);
+			//computeTagScore(elements, i);
+			model.computeTagScore(elements, i);
 		}
 
 		float value = elements.get(0).tagScore[1];

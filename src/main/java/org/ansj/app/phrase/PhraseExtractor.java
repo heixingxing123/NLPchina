@@ -70,6 +70,7 @@ public class PhraseExtractor {
      *
      * @param text
      */
+    /*
     public void fromText(String text) {
         String str;
         Occurrence occ;
@@ -123,6 +124,62 @@ public class PhraseExtractor {
             }
         }
     }
+     */
+    public void fromText(String text) {
+        List<List<Term>> sentences = seg2sentence(text);
+        totalTerm += sentences.stream().mapToInt(List::size).sum();
+
+        for (List<Term> sentence : sentences) {
+            processSentence(sentence);
+        }
+    }
+
+    private void processSentence(List<Term> sentence) {
+        StringBuilder sb = new StringBuilder();
+        List<Term> terms = new ArrayList<>();
+
+        for (int i = 0; i < sentence.size(); ++i) {
+            for (int j = i; j < sentence.size(); ++j) {
+                String str = sentence.get(j).getRealName();
+                updateTermMap(str);
+
+                sb.append(str);
+                if (length < sb.length()) {
+                    break;
+                }
+
+                terms.add(sentence.get(j));
+                processNgram(sentence, terms, sb, i, j);
+            }
+
+            terms.clear();
+            sb.setLength(0);
+        }
+    }
+
+    private void updateTermMap(String term) {
+        termMap.put(term, termMap.getOrDefault(term, 0) + 1);
+    }
+
+    private void processNgram(List<Term> sentence, List<Term> terms, StringBuilder sb, int i, int j) {
+        String str = sb.toString();
+        Occurrence occ = occurrenceMap.getOrDefault(str, new Occurrence(new ArrayList<>(terms)));
+
+        if (i > 0) {
+            occ.addLeftTerm(sentence.get(i - 1).getRealName());
+        }
+
+        if (j < sentence.size() - 1) {
+            occ.addRightTerm(sentence.get(j + 1).getRealName());
+        }
+
+        occ.increaseFrequency();
+
+        if (occ.getFrequency() == 1) {
+            addOccurrence(str, occ);
+        }
+    }
+
 
     private void addTerm(String t) {
         // 超过容量, 移除低频TERM

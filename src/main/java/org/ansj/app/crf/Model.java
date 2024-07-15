@@ -1,5 +1,7 @@
 package org.ansj.app.crf;
 
+import org.ansj.app.crf.pojo.Element;
+import org.ansj.util.MatrixUtil;
 import org.ansj.app.crf.model.CRFModel;
 import org.ansj.app.crf.model.CRFppTxtModel;
 import org.ansj.app.crf.model.WapitiCRFModel;
@@ -8,6 +10,7 @@ import org.nlpcn.commons.lang.util.MapCount;
 import org.nlpcn.commons.lang.util.logging.Log;
 import org.nlpcn.commons.lang.util.logging.LogFactory;
 
+import java.util.List;
 import java.io.*;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -175,4 +178,15 @@ public abstract class Model {
 			logger.warn("IO异常", e);
 		}
 	}
+
+	public void computeTagScore(List<Element> elements, int index) {
+		char[][] features = this.getConfig().makeFeatureArr(elements, index);
+		float[] tagScore = new float[20];
+		for (int i = 0; i < features.length; i++) {
+			MatrixUtil.dot(tagScore, this.getFeature(features[i]));
+		}
+		elements.get(index).tagScore = tagScore;
+	}
+
+
 }
